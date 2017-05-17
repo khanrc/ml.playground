@@ -1,6 +1,6 @@
 # Playground
 
-This repo is like to the playground for various tensorflow models. 
+This repo is the playground for various tensorflow models. 
 I will implements various models to understand various papers. 
 If one of these projects grows up, it will separate.
 
