@@ -54,33 +54,34 @@ def get_pixel_value(img, x, y):
 # 리팩토링이 좀 필요할 듯
 class AffineTransformer:
     def __init__(self, X, M, out_size=None):
-        # 일반적으로 이 X 는 minibatch images 가 됨
-        self.X = X
-        # 여기서 알아둘 것! X.shape, X.get_shape(), tf.shape(X) 의 차이!
-        # tf.shape(X) 는 ops 다. 즉, 리턴이 텐서로 나온다. 
-        # 반면 X.shape 이나 X.get_shape 은 뭐랄까.. imperative 함수다. 리턴값이 텐서가 아니다.
-        # 따라서 아래와 같이 그래프 내에서 shape 을 활용하고 싶다면 tf.shape 을 사용해야 한다!
-#         self.batch_size, self.height, self.width, self.channels = tf.shape(self.X) #self.X.shape, tf.shape(self.X)
-#         self.batch_size, self.height, self.width, self.channels = self.X.shape
-        self.batch_size = tf.cast(tf.shape(self.X)[0], tf.int32)
-        self.height = int(self.X.shape[1])
-        self.width = int(self.X.shape[2])
-        self.channels = int(self.X.shape[3])
-        # batch_size 만 유동적임. 나머지까지 tf.shape 로 하면 오히려 문제가 생김 (이 네트웤은 고정 인풋에 대한 네트웤이므로)
-        # 구체적으로는 dense layer 에서 문제가 생김. input dense layer 의 input layer 의 unit 개수가 ? 가 되어서
-        # 컴파일이 안 된다.
-        # 만약 FCN 같이 유동 인풋을 커버하는 네트웤이라면 tf.shape 로 해야 할 듯
-#         self.height = tf.cast(tf.shape(self.X)[1], tf.int32)
-#         self.width = tf.cast(tf.shape(self.X)[2], tf.int32)
-#         self.channels = tf.cast(tf.shape(self.X)[3], tf.int32)
-        if out_size is not None:
-            H, W = out_size
-        else:
-            H, W = self.height, self.width
-        
-        sampling_grid = self.affine_grid_generator(H, W, M)
-        batch_grids = self.affine_transform(sampling_grid, H, W, M)
-        self.transform = self.bilinear_sampler(batch_grids)
+        with tf.variable_scope("affine_transform"):
+            # 일반적으로 이 X 는 minibatch images 가 됨
+            self.X = X
+            # 여기서 알아둘 것! X.shape, X.get_shape(), tf.shape(X) 의 차이!
+            # tf.shape(X) 는 ops 다. 즉, 리턴이 텐서로 나온다. 
+            # 반면 X.shape 이나 X.get_shape 은 뭐랄까.. imperative 함수다. 리턴값이 텐서가 아니다.
+            # 따라서 아래와 같이 그래프 내에서 shape 을 활용하고 싶다면 tf.shape 을 사용해야 한다!
+    #         self.batch_size, self.height, self.width, self.channels = tf.shape(self.X) #self.X.shape, tf.shape(self.X)
+    #         self.batch_size, self.height, self.width, self.channels = self.X.shape
+            self.batch_size = tf.cast(tf.shape(self.X)[0], tf.int32)
+            self.height = int(self.X.shape[1])
+            self.width = int(self.X.shape[2])
+            self.channels = int(self.X.shape[3])
+            # batch_size 만 유동적임. 나머지까지 tf.shape 로 하면 오히려 문제가 생김 (이 네트웤은 고정 인풋에 대한 네트웤이므로)
+            # 구체적으로는 dense layer 에서 문제가 생김. input dense layer 의 input layer 의 unit 개수가 ? 가 되어서
+            # 컴파일이 안 된다.
+            # 만약 FCN 같이 유동 인풋을 커버하는 네트웤이라면 tf.shape 로 해야 할 듯
+    #         self.height = tf.cast(tf.shape(self.X)[1], tf.int32)
+    #         self.width = tf.cast(tf.shape(self.X)[2], tf.int32)
+    #         self.channels = tf.cast(tf.shape(self.X)[3], tf.int32)
+            if out_size is not None:
+                H, W = out_size
+            else:
+                H, W = self.height, self.width
+            
+            sampling_grid = self.affine_grid_generator(H, W, M)
+            batch_grids = self.affine_transform(sampling_grid, H, W, M)
+            self.transform = self.bilinear_sampler(batch_grids)
         
 
     def affine_grid_generator(self, H, W, M):

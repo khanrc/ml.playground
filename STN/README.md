@@ -11,23 +11,21 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 ## ToDo
 
-* allconv/stn 모델 분리하기
-    * kkm 님 스타일로 분리해볼까...
-    * 암튼 지금처럼은 아님.
-* Tensorboard
-    * [TF dev summit 2017 - Youtube](https://www.youtube.com/watch?v=eBbEDRsCmv4) 보고 나오는 기법 그대로 다 적용하기
-    * 다양한 히스토그램도 그려보고
-    * 예쁘게 잘 모아서 비교도 해 보고
-    * 여러 파라메터 / 다른 모델(allconv)에 대해서 비교도 해 보고
-    * 이미지도 찍어보고
-    * 텍스트도 찍어보고 - 이건 어떻게 하더라
-    * 그리고 위 영상 보면 W/b 가 0일때 전혀 학습이 안 되는 경우가 있는데 이찬우님 얘기는 뭐였는지 확인해보고
-        * 아마 레이어 하나만 0이면 괜찮은 그런 케이스가 아닐까 싶지만
-        * 암튼 백프로파게이션 (직접 해 보면 좋고 아님 말고) 식으로 확인해보자
-* Summary
-    * [x] loss/accuracy
+* [x] tensorboard graph cleaning
+* [ ] Summaries
+    * [x] loss/accuracy scalar
+    * [x] summary_dir arrange
     * [ ] histogram for M
         * 시작값인 identity mapping 에서 어떻게 변하는가
     * [ ] image - input / transformed
-
+    * [ ] text for # of params
+    * [ ] compare models & allconv (last)
+* allconv/stn 모델 분리하기
+    * kkm 님 스타일로 분리해볼까...
+    * 그냥 지금처럼 내비두고 그때그때 다른거 불러와서 학습시키는게 낫겠다.
+    * 둘다 같이 돌리는건 좀 별로고.
+* ETC
+    * 그리고 위 영상 (devsummit) 보면 W/b 가 0일때 전혀 학습이 안 되는 경우가 있는데 이찬우님 얘기는 뭐였는지 확인해보고
+        * 아마 레이어 하나만 0이면 괜찮은 그런 케이스가 아닐까 싶지만
+        * 암튼 백프로파게이션 (직접 해 보면 좋고 아님 말고) 식으로 확인해보자
 
