@@ -123,11 +123,14 @@ class STNs(object):
         self.num_params, self.params_counter = self._count_params()
 
     def _build_nets(self, lr, locnets_type, use_residual_M):
+        img_summary_max = 13
         with tf.variable_scope(self.name):
             self.X = tf.placeholder(tf.float32, [None, 1600], name='X')
             self.y = tf.placeholder(tf.float32, [None, 10], name='y')
+            self.only_cnn = tf.placeholder(tf.bool, name='only_cnn')
 
             x_img = tf.reshape(self.X, [-1, 40, 40, 1], name='x_img')
+            tf.summary.image("input", x_img, img_summary_max)
 
             # localization networks
             with tf.variable_scope("locnets-" + locnets_type):
@@ -150,24 +153,31 @@ class STNs(object):
                     raise 'locnets type Error'
 
                 # print("locnet shape: {}".format(loc_net.shape))
-                # 두 방법 모두 2*tanh 같은 activ func 를 사용해줄 필요는 있어 보이는데
+                # 두 방법 모두 2*tanh 같은 activ func 를 사용해줄 필요는 있어 보이는데 
                 if use_residual_M == False:
                     # residual connection (차이만을 학습) 을 사용하지 않고, 초기값이 identity mapping 이 되도록 한 다음에 학습
                     init = tf.constant_initializer([1., 0., 0., 0., 1., 0.])
-                    M = dense(loc_net, 6, kernel_initializer=tf.zeros_initializer, bias_initializer=init, name="dense1")
+                    self.M = dense(loc_net, 6, kernel_initializer=tf.zeros_initializer, bias_initializer=init, name="dense1")
                 else:
                     # residual connection intuition + low learning rate
                     # 근데 이렇게하면 train_loss 는 잘 주는데, test acc 가 이상함... (0.89 정도)
                     # 내생각에는 STN 부분이랑 CNN 부분이랑 밸런스 문제가 있는 것 같은데...
                     # 이건 비주얼라이제이션을 해 봐야 확실히 알 수 있지 않을까 싶음.
                     # => 더 이상한게 위처럼 해도 lr 에 따라서 수렴값이 달라짐... -.-... 그냥 로컬 미니멈의 문제인가...
-                    M_diff = dense(loc_net, 6, name="dense1")
-                    M = tf.constant([1., 0., 0., 0., 1., 0.]) + M_diff
+                    # 일케하면 될거같긴 한데 그럼 이거는 위에랑 다른게 없는거 같은데...?
+                    M_diff = dense(loc_net, 6, kernel_initializer=tf.zeros_initializer, name="dense1")
+                    tf.summary.histogram("M_diff", M_diff)
+                    self.M = tf.constant([1., 0., 0., 0., 1., 0.]) + M_diff
                 
+                tf.summary.histogram("M", self.M)
                 # grid generator & sampler (affine transform)
-                transformer = AffineTransformer(x_img, M)
-                net = transformer.transform
+                transformer = AffineTransformer(x_img, self.M)
+                transformed_x_img = transformer.transform
+                tf.summary.image("transformed", transformed_x_img, img_summary_max)
             
+            # net = transformed_x_img
+            net = tf.cond(self.only_cnn, lambda: x_img, lambda: transformed_x_img)
+
             with tf.variable_scope("cnn"):
                 n_filters = 32
                 for i in range(3):
@@ -192,10 +202,19 @@ class STNs(object):
             self.train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(self.loss)
 
             # summaries
-            self.summary_op = tf.summary.merge([
-                tf.summary.scalar("loss", self.loss),
-                tf.summary.scalar("accuracy", self.accuracy)
-            ])
+            
+            tf.summary.scalar("loss", self.loss)
+            tf.summary.scalar("accuracy", self.accuracy)
+
+            self.summary_op = tf.summary.merge_all()
+
+            # self.summary_op = tf.summary.merge([
+            #     tf.summary.scalar("loss", self.loss),
+            #     tf.summary.scalar("accuracy", self.accuracy),
+            #     tf.summary.image("input", x_img),
+            #     tf.summary.image("transformed", transformed_x_img),
+            #     tf.summary.histogram("M", M)
+            # ])
 
     def _count_params(self):
         #iterating over all variables
