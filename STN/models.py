@@ -31,27 +31,36 @@ def conv(inputs, filters, kernel_size, strides=1, padding='same', activation=tf.
     return tf.layers.conv2d(inputs, filters, kernel_size, strides=strides, padding=padding, activation=activation,
                             kernel_initializer=kernel_initializer, name=name)
 
+def conv_bn(inputs, filters, kernel_size, training, strides=1, padding='same', activation=tf.nn.relu,
+            kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), name=None):
+    with tf.variable_scope(name):
+        net = conv(inputs, filters, kernel_size, strides=strides, padding=padding, activation=None, kernel_initializer=kernel_initializer, name=None)
+        net = tf.layers.batch_normalization(net, training=training)
+        net = activation(net)
+
+    return net
+
 def max_pooling(inputs, pool_size=[2,2], strides=2, padding='same', name=None):
     return tf.layers.max_pooling2d(inputs, pool_size, strides, padding=padding, name=name)
 
 def dense(inputs, units, activation=None, kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), 
-          bias_initializer=None, name=None):
-    if bias_initializer:
-        return tf.layers.dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, 
-                               bias_initializer=bias_initializer, name=name)
-    else:
-        return tf.layers.dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, name=name)
+          bias_initializer=tf.zeros_initializer, name=None):
+    return tf.layers.dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, bias_initializer=bias_initializer, name=name)
+    # if bias_initializer:
+    #     return tf.layers.dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, 
+    #                            bias_initializer=bias_initializer, name=name)
+    # else:
+    #     return tf.layers.dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, name=name)
 
-class DefaultModel(object):
-    def __init__(self):
-        pass
+def dense_bn(inputs, units, training, activation=None, kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), 
+             bias_initializer=tf.zeros_initializer, name=None):
+    with tf.variable_scope(name):
+        net = dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, bias_initializer=bias_initializer)
+        if activation is not None:
+            net = tf.layers.batch_normalization(net, training=training)
+            net = activation(net)
 
-    def _build_nets(self):
-        pass
-
-    def _build_graph(self):
-        nets = self._build_nets()
-        pass
+    return net
 
 
 class AllConvNets(object):
@@ -111,7 +120,7 @@ class AllConvNets(object):
             
         return total
 
-# histogram! 
+
 class STNs(object):
     def _make_name(self, name, lr, locnets_type, use_residual_M):
         res_name = "useres" if use_residual_M else "nores"
@@ -127,7 +136,8 @@ class STNs(object):
         with tf.variable_scope(self.name):
             self.X = tf.placeholder(tf.float32, [None, 1600], name='X')
             self.y = tf.placeholder(tf.float32, [None, 10], name='y')
-            self.only_cnn = tf.placeholder(tf.bool, name='only_cnn')
+            # self.only_cnn = tf.placeholder(tf.bool, name='only_cnn')
+            self.training = tf.placeholder(tf.bool, name='training')
 
             x_img = tf.reshape(self.X, [-1, 40, 40, 1], name='x_img')
             tf.summary.image("input", x_img, img_summary_max)
@@ -140,7 +150,7 @@ class STNs(object):
                     # why conv stn does not work?
                     n_filters = 32
                     for i in range(3):
-                        loc_net = conv(loc_net, n_filters, kernel_size=[3,3], name="conv{}".format(i))
+                        loc_net = conv_bn(loc_net, n_filters, training=self.training, kernel_size=[3,3], name="conv{}".format(i))
                         loc_net = max_pooling(loc_net, pool_size=[2,2], strides=2, name="maxpool{}".format(i))
                         n_filters *= 2
                     # 32, 64, 128
@@ -148,7 +158,7 @@ class STNs(object):
                     loc_net = tf.contrib.layers.flatten(loc_net)
                 elif locnets_type == 'fc':
                     # cnn => dense
-                    loc_net = dense(self.X, 256, activation=tf.nn.relu, name="dense0")
+                    loc_net = dense_bn(self.X, 256, training=self.training, activation=tf.nn.relu, name="dense0")
                 else:
                     raise 'locnets type Error'
 
@@ -159,12 +169,9 @@ class STNs(object):
                     init = tf.constant_initializer([1., 0., 0., 0., 1., 0.])
                     self.M = dense(loc_net, 6, kernel_initializer=tf.zeros_initializer, bias_initializer=init, name="dense1")
                 else:
-                    # residual connection intuition + low learning rate
-                    # 근데 이렇게하면 train_loss 는 잘 주는데, test acc 가 이상함... (0.89 정도)
-                    # 내생각에는 STN 부분이랑 CNN 부분이랑 밸런스 문제가 있는 것 같은데...
-                    # 이건 비주얼라이제이션을 해 봐야 확실히 알 수 있지 않을까 싶음.
-                    # => 더 이상한게 위처럼 해도 lr 에 따라서 수렴값이 달라짐... -.-... 그냥 로컬 미니멈의 문제인가...
-                    # 일케하면 될거같긴 한데 그럼 이거는 위에랑 다른게 없는거 같은데...?
+                    # residual connection
+                    # init 를 똑같이 하면 위랑 다를 게 없는 것 같은데.
+                    # 약간은 다를 수 있음.. BP 식을 계산해 봐야 알 듯.
                     M_diff = dense(loc_net, 6, kernel_initializer=tf.zeros_initializer, name="dense1")
                     tf.summary.histogram("M_diff", M_diff)
                     self.M = tf.constant([1., 0., 0., 0., 1., 0.]) + M_diff
@@ -175,13 +182,13 @@ class STNs(object):
                 transformed_x_img = transformer.transform
                 tf.summary.image("transformed", transformed_x_img, img_summary_max)
             
-            # net = transformed_x_img
-            net = tf.cond(self.only_cnn, lambda: x_img, lambda: transformed_x_img)
+            net = transformed_x_img
+            # net = tf.cond(self.only_cnn, lambda: x_img, lambda: transformed_x_img)
 
             with tf.variable_scope("cnn"):
                 n_filters = 32
                 for i in range(3):
-                    net = conv(net, n_filters, kernel_size=[3,3], name="conv{}".format(i))
+                    net = conv_bn(net, n_filters, training=self.training, kernel_size=[3,3], name="conv{}".format(i))
                     net = max_pooling(net, pool_size=[2,2], strides=2, name="maxpool{}".format(i))
                     n_filters *= 2
 
@@ -199,10 +206,13 @@ class STNs(object):
                 self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.logits, axis=1), tf.argmax(self.y, axis=1)), tf.float32))
             with tf.variable_scope("loss"):
                 self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.logits))
-            self.train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(self.loss)
+            
+            # train_op 를 하기 전에 update_op 를 해주라는 명령인 것 같음.
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=self.name)
+            with tf.control_dependencies(update_ops):
+                self.train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(self.loss)
 
             # summaries
-            
             tf.summary.scalar("loss", self.loss)
             tf.summary.scalar("accuracy", self.accuracy)
 

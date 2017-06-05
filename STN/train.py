@@ -56,7 +56,7 @@ if __name__ == "__main__":
     num_iter = N // batch_size
 
     # allconv_name = "allconv-{}".format(epoch_n) 
-    stn_name = 'stn-zero-cnnonly-{}'.format(epoch_n)
+    stn_name = 'stn-zero-bn-{}'.format(epoch_n)
 
     # build nets
     # tf.reset_default_graph()
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             batch_y = train[i:i+batch_size, 1600:]
             
             _, stn_cur_loss, stn_summary = sess.run([stn.train_op, stn.loss, stn.summary_op], 
-                                                    {stn.X: batch_x, stn.y: batch_y, stn.only_cnn: False})
+                                                    {stn.X: batch_x, stn.y: batch_y, stn.training: True})
             stn_avg_loss += stn_cur_loss
             train_writer.add_summary(stn_summary, epoch)
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         stn_avg_loss /= num_iter
         
         stn_cur_acc, stn_cur_loss, stn_cur_M, stn_summary = sess.run([stn.accuracy, stn.loss, stn.M, stn.summary_op], 
-                                                                     {stn.X: X_test, stn.y: y_test, stn.only_cnn: False})
+                                                                     {stn.X: X_test, stn.y: y_test, stn.training: False})
         test_writer.add_summary(stn_summary, epoch)
         
         # stn_cnn_summary = sess.run(stn.summary_op, {stn.X: X_test, stn.y: y_test, stn.only_cnn: True})
