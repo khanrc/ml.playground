@@ -8,7 +8,7 @@ class Model(object):
     def __init__(self, name, use_BN, use_CD, lr):
         # use_BN
         # use_CD: control dependencies
-
+        self.name = name
         self._build_nets(name, use_BN, use_CD, lr)
 
 
@@ -45,19 +45,20 @@ class Model(object):
                 self.prob = tf.nn.softmax(self.logits)
             
             with tf.variable_scope("accuracy"):
-                self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.logits, axis=1), tf.argmax(self.y, axis=1)), tf.float32))
+                self.accuracy = tf.equal(tf.argmax(self.logits, axis=1), tf.argmax(self.y, axis=1))
+                self.accuracy = tf.reduce_mean(tf.cast(self.accuracy, tf.float32))
 
             with tf.variable_scope("loss"):
                 self.loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y)
                 self.loss = tf.reduce_mean(self.loss)
 
             with tf.variable_scope("train_op"):
-                if use_CD:
-                    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-                    with tf.control_dependencies(update_ops):
-                        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
-                else:
-                    self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+                # if use_CD:
+                #     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                #     with tf.control_dependencies(update_ops):
+                #         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+                # else:
+                self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
             # summaries
             tf.summary.scalar("loss", self.loss)
