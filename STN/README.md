@@ -13,7 +13,7 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 ### 1. First question
 
-![stn-100-why](stn-100-why.png)
+![stn-100-why](images/stn-100-why.png)
 
 일단 적당히 실험 결과는 나왔는데, 이게 왜 이렇게 러닝레잇에 따라서 결과가 크게 달라질까?
 
@@ -23,7 +23,7 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 ### 2. Various experiments
 
-![stn-200](stn-200.png)
+![stn-200](images/stn-200.png)
 
 다양한 러닝레잇 & 커넥션 타입에 따른 실험 결과. residual connection 을 사용할 때에는 lr=0.0005 정도에서, 사용하지 않을 때에는 0.001 정도에서 가장 좋은 acc 값을 보였으며, 너무 작아지면 공통적으로 낮은 acc 값으로 수렴함을 볼 수 있었다.
 
@@ -33,7 +33,7 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 이 실험은 하고 나서 잘못되었다는걸 깨달은 게, TN 이 identity mapping 에서 많이 벗어나게 학습될수록 CNN 의 정확도는 당연히 떨어질 수 밖에 없다. 그래서 이건 오히려 TN 이 얼마나 identity mapping 에서 떨어져 있느냐를 보여주는 지표에 가깝다.
 
-![stn-cnn](stn-cnn.png)
+![stn-cnn](images/stn-cnn.png)
 
 위에서 말한것처럼 lr=0.001 + residual connection 은 전혀 학습이 되지 않는다. 웃긴 건 테스트 어큐러시는 0.125로 수렴한다는 것이다. 이건 나중에야 알게 되었는데 이 경우 너무 TN이 팡팡 튀어서 이미지를 아예 없애 버린다. 그래서 제대로 된 gradient 가 넘어오지 않기 때문에 학습이 아예 안 되는 것 같다.
 
@@ -51,13 +51,13 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 동일한 네트워크 구조를 사용해서 TN 까지 사용한 STN 과 그냥 CNN 을 비교해보면 수렴 acc 가 0.986 vs. 0.938 로 STN이 확실히 좋게 나온다.
 
-![stn-last](stn-last.png)
+![stn-last](images/stn-last.png)
 
 ### 5. Batch normalization
 
 학습 밸런스를 맞추기 위한 보다 근본적인 방법이 바로 batch normalization 일 거라고 생각했고, 이를 테스트 해 보았다.
 
-![stn-bn](stn-bn.png)
+![stn-bn](images/stn-bn.png)
 
 실제로 다양한 lr 에서 모두 학습이 잘 되는 걸 볼 수 있다. 즉, TN 과 CNN 의 학습 밸런스가 맞아들어간다는 것이다. BN이 좋은 성능을 보이는 이유를 이러한 관점에서도 설명할 수 있을 것 같다 - 레이어 간의 학습 밸런스.
 
