@@ -37,7 +37,7 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 위에서 말한것처럼 lr=0.001 + residual connection 은 전혀 학습이 되지 않는다. 웃긴 건 테스트 어큐러시는 0.125로 수렴한다는 것이다. 이건 나중에야 알게 되었는데 이 경우 너무 TN이 팡팡 튀어서 이미지를 아예 없애 버린다. 그래서 제대로 된 gradient 가 넘어오지 않기 때문에 학습이 아예 안 되는 것 같다.
 
-> 이 논리가 말이 되는건지 모르겠다.
+> 이 논리가 말이 되는건지 모르겠다. 이미지가 없다고 해서 gradient 가 제대로 넘어오지 않나? STN 에서는 말이 될 수 있을 것 같음. bp 식을 생각해 봐야 하는데...
 
 그래서 이렇게 너무 튀는걸 막아주려고 tanh 제한도 걸어 보았다. 이 결과로 알수 있었던 건, tanh 를 걸어주면 범위 제한이 생기긴 하지만 마찬가지로 초반에 팡팡 튄다. 이 때문에 TN 이 이미지를 이상하게 align 했을 때, CNN 이 align 상태로 그냥 학습해 버려서 STN 이 위치를 조정할 수 없게 된다. 즉, TN + CNN 구조는 그냥 CNN 보다 훨씬 로컬 미니마에 빠지기 쉬운 상태가 되는 것이다. 이제 우리는 왜 이렇게 STN이 하이퍼파라메터에 따라 결과가 다르게 나오는지를 알았다!
 
@@ -52,6 +52,14 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 동일한 네트워크 구조를 사용해서 TN 까지 사용한 STN 과 그냥 CNN 을 비교해보면 수렴 acc 가 0.986 vs. 0.938 로 STN이 확실히 좋게 나온다.
 
 ![stn-last](stn-last.png)
+
+### 5. Batch normalization
+
+학습 밸런스를 맞추기 위한 보다 근본적인 방법이 바로 batch normalization 일 거라고 생각했고, 이를 테스트 해 보았다.
+
+![stn-bn](stn-bn.png)
+
+실제로 다양한 lr 에서 모두 학습이 잘 되는 걸 볼 수 있다. 즉, TN 과 CNN 의 학습 밸런스가 맞아들어간다는 것이다. BN이 좋은 성능을 보이는 이유를 이러한 관점에서도 설명할 수 있을 것 같다 - 레이어 간의 학습 밸런스.
 
 ### 추가로 해볼만한 실험들
 

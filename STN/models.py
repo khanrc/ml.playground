@@ -34,7 +34,8 @@ def conv(inputs, filters, kernel_size, strides=1, padding='same', activation=tf.
 def conv_bn(inputs, filters, kernel_size, training, strides=1, padding='same', activation=tf.nn.relu,
             kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), name=None):
     with tf.variable_scope(name):
-        net = conv(inputs, filters, kernel_size, strides=strides, padding=padding, activation=None, kernel_initializer=kernel_initializer, name=None)
+        # use_bias=False 랑 bias_init=zero 랑 다른가?
+        net = tf.layers.conv2d(inputs, filters, kernel_size, strides, padding, kernel_initializer=kernel_initializer, use_bias=False)
         net = tf.layers.batch_normalization(net, training=training)
         net = activation(net)
 
@@ -52,13 +53,13 @@ def dense(inputs, units, activation=None, kernel_initializer=tf.contrib.layers.v
     # else:
     #     return tf.layers.dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, name=name)
 
-def dense_bn(inputs, units, training, activation=None, kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), 
-             bias_initializer=tf.zeros_initializer, name=None):
+# 이렇게 bias 를 줘야 하는 경우엔 BN 을 어떻게 써야 할까?
+# BN 에서 더해주는 베타값으로 조정해줘야 할듯
+def dense_bn(inputs, units, training, activation=None, kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), name=None):
     with tf.variable_scope(name):
-        net = dense(inputs, units, activation=activation, kernel_initializer=kernel_initializer, bias_initializer=bias_initializer)
-        if activation is not None:
-            net = tf.layers.batch_normalization(net, training=training)
-            net = activation(net)
+        net = tf.layers.dense(inputs, units, kernel_initializer=kernel_initializer, use_bias=False)
+        net = tf.layers.batch_normalization(net, training=training)
+        net = activation(net)
 
     return net
 

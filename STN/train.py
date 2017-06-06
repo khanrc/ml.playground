@@ -55,13 +55,13 @@ if __name__ == "__main__":
     N = X_train.shape[0]
     num_iter = N // batch_size
 
-    # allconv_name = "allconv-{}".format(epoch_n) 
-    stn_name = 'stn-zero-bn-{}'.format(epoch_n)
+    # allconv_name = "allconv-{}".format(epoch_n)
+    stn_name = 'stn-bn-{}'.format(epoch_n)
 
     # build nets
     # tf.reset_default_graph()
     # allconv = AllConvNets()
-    # 참 웃긴 놈일세... 0.89~0.97 다양한 값으로 수렴함
+    # 참 웃긴 놈일세... 0.89~0.97 다양한 값으로 수렴함 
     stn = STNs(name=stn_name, locnets_type=FLAGS.locnet, lr=FLAGS.lr, use_residual_M=FLAGS.residual)
     summary_dir = "summary/{}/".format(stn.name)
     if os.path.exists(summary_dir):
