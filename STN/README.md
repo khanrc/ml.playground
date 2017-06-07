@@ -61,6 +61,20 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 실제로 다양한 lr 에서 모두 학습이 잘 되는 걸 볼 수 있다. 즉, TN 과 CNN 의 학습 밸런스가 맞아들어간다는 것이다. BN이 좋은 성능을 보이는 이유를 이러한 관점에서도 설명할 수 있을 것 같다 - 레이어 간의 학습 밸런스.
 
+### ETC
+
+* BN 을 적용한 후에 TN 의 init/activation 방법을 다양하게 해 보았다.
+    * BN 을 적용하고 나니 확실히 다양한 방법들도 어느정도 학습이 됨
+    * 그러나 여전히 TN 이 튀는 현상이 있고, zero init 만큼 이 문제를 잘 잡아내지 못함
+    * zero init 이 정답인가?
+    * 애초에 왜 zero init 에서 BP 가 학습이 되는가?
+        * BP 를 계산해보면, softmax/CE loss 에서 마지막 레이어는 앞레이어의 W 와 곱해서 그라디언트를 계산하지 않는다.
+        * 이때의 그라디언트는 (y_hat-y)*a_{i-1} 이 된다. 즉, a_{i-1} 이 0 이 아니라면, 마지막 레이어의 input 이 0이 아니라면 학습이 된다는것.
+        * 따라서, 마지막 레이어만 zero init 이라면 그 네트워크는 학습이 '천천히' 된다! 
+        * STN 의 zero init 은 이걸 이용한 것!
+    * 좀 편법 같은데. 좀더 본질적으로는 이 affine transform 의 capacity 에 맞는 init/activation function 을 사용하는 것이 정답이라고 본다.
+    
+
 ### 추가로 해볼만한 실험들
 
 * 동일/더 많은 파라메터를 가지는 네트워크와 비교
