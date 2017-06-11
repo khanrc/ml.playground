@@ -13,7 +13,7 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 ### 1. First question
 
-![stn-100-why](stn-100-why.png)
+![stn-100-why](images/stn-100-why.png)
 
 일단 적당히 실험 결과는 나왔는데, 이게 왜 이렇게 러닝레잇에 따라서 결과가 크게 달라질까?
 
@@ -23,7 +23,7 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 ### 2. Various experiments
 
-![stn-200](stn-200.png)
+![stn-200](images/stn-200.png)
 
 다양한 러닝레잇 & 커넥션 타입에 따른 실험 결과. residual connection 을 사용할 때에는 lr=0.0005 정도에서, 사용하지 않을 때에는 0.001 정도에서 가장 좋은 acc 값을 보였으며, 너무 작아지면 공통적으로 낮은 acc 값으로 수렴함을 볼 수 있었다.
 
@@ -33,11 +33,11 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 이 실험은 하고 나서 잘못되었다는걸 깨달은 게, TN 이 identity mapping 에서 많이 벗어나게 학습될수록 CNN 의 정확도는 당연히 떨어질 수 밖에 없다. 그래서 이건 오히려 TN 이 얼마나 identity mapping 에서 떨어져 있느냐를 보여주는 지표에 가깝다.
 
-![stn-cnn](stn-cnn.png)
+![stn-cnn](images/stn-cnn.png)
 
 위에서 말한것처럼 lr=0.001 + residual connection 은 전혀 학습이 되지 않는다. 웃긴 건 테스트 어큐러시는 0.125로 수렴한다는 것이다. 이건 나중에야 알게 되었는데 이 경우 너무 TN이 팡팡 튀어서 이미지를 아예 없애 버린다. 그래서 제대로 된 gradient 가 넘어오지 않기 때문에 학습이 아예 안 되는 것 같다.
 
-> 이 논리가 말이 되는건지 모르겠다.
+> 이 논리가 말이 되는건지 모르겠다. 이미지가 없다고 해서 gradient 가 제대로 넘어오지 않나? STN 에서는 말이 될 수 있을 것 같음. bp 식을 생각해 봐야 하는데...
 
 그래서 이렇게 너무 튀는걸 막아주려고 tanh 제한도 걸어 보았다. 이 결과로 알수 있었던 건, tanh 를 걸어주면 범위 제한이 생기긴 하지만 마찬가지로 초반에 팡팡 튄다. 이 때문에 TN 이 이미지를 이상하게 align 했을 때, CNN 이 align 상태로 그냥 학습해 버려서 STN 이 위치를 조정할 수 없게 된다. 즉, TN + CNN 구조는 그냥 CNN 보다 훨씬 로컬 미니마에 빠지기 쉬운 상태가 되는 것이다. 이제 우리는 왜 이렇게 STN이 하이퍼파라메터에 따라 결과가 다르게 나오는지를 알았다!
 
@@ -51,7 +51,29 @@ Jaderberg, Max, Karen Simonyan, and Andrew Zisserman. "Spatial transformer netwo
 
 동일한 네트워크 구조를 사용해서 TN 까지 사용한 STN 과 그냥 CNN 을 비교해보면 수렴 acc 가 0.986 vs. 0.938 로 STN이 확실히 좋게 나온다.
 
-![stn-last](stn-last.png)
+![stn-last](images/stn-last.png)
+
+### 5. Batch normalization
+
+학습 밸런스를 맞추기 위한 보다 근본적인 방법이 바로 batch normalization 일 거라고 생각했고, 이를 테스트 해 보았다.
+
+![stn-bn](images/stn-bn.png)
+
+실제로 다양한 lr 에서 모두 학습이 잘 되는 걸 볼 수 있다. 즉, TN 과 CNN 의 학습 밸런스가 맞아들어간다는 것이다. BN이 좋은 성능을 보이는 이유를 이러한 관점에서도 설명할 수 있을 것 같다 - 레이어 간의 학습 밸런스.
+
+### ETC
+
+* BN 을 적용한 후에 TN 의 init/activation 방법을 다양하게 해 보았다.
+    * BN 을 적용하고 나니 확실히 다양한 방법들도 어느정도 학습이 됨
+    * 그러나 여전히 TN 이 튀는 현상이 있고, zero init 만큼 이 문제를 잘 잡아내지 못함
+    * zero init 이 정답인가?
+    * 애초에 왜 zero init 에서 BP 가 학습이 되는가?
+        * BP 를 계산해보면, softmax/CE loss 에서 마지막 레이어는 앞레이어의 W 와 곱해서 그라디언트를 계산하지 않는다.
+        * 이때의 그라디언트는 (y_hat-y)*a_{i-1} 이 된다. 즉, a_{i-1} 이 0 이 아니라면, 마지막 레이어의 input 이 0이 아니라면 학습이 된다는것.
+        * 따라서, 마지막 레이어만 zero init 이라면 그 네트워크는 학습이 '천천히' 된다! 
+        * STN 의 zero init 은 이걸 이용한 것!
+    * 좀 편법 같은데. 좀더 본질적으로는 이 affine transform 의 capacity 에 맞는 init/activation function 을 사용하는 것이 정답이라고 본다.
+    
 
 ### 추가로 해볼만한 실험들
 
