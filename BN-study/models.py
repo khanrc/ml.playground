@@ -1,7 +1,6 @@
 # coding: utf-8
 
 import tensorflow as tf
-# from utils import *
 
 
 class Model(object):
@@ -53,14 +52,18 @@ class Model(object):
                 self.loss = tf.reduce_mean(self.loss)
 
             with tf.variable_scope("train_op"):
-                # if use_CD:
-                #     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-                #     with tf.control_dependencies(update_ops):
-                #         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
-                # else:
-                self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+                if use_CD:
+                    # same as summaries, get_collection must specify scope!
+                    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=name)
+                    with tf.control_dependencies(update_ops):
+                        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+                else:
+                    self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
             # summaries
-            tf.summary.scalar("loss", self.loss)
-            tf.summary.scalar("accuracy", self.accuracy)
-            self.summary_op = tf.summary.merge_all()
+            # Caution: When design multiple models in a single graph,
+            # `tf.summary.merge_all` function tries merging every summaries of models.
+            self.summary_op = tf.summary.merge([
+                tf.summary.scalar("loss", self.loss),
+                tf.summary.scalar("accuracy", self.accuracy)
+            ])

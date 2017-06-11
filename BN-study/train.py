@@ -8,7 +8,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets('../MNIST_data/', one_hot=True)
 
 batch_size = 100
-epoch_n = 20
+epoch_n = 10
 N = mnist.train.num_examples 
 n_iter = N // batch_size
 lr = 0.001
@@ -42,22 +42,39 @@ test_writers = [
 ]
 
 for epoch in range(epoch_n):
+    avg_loss = [0., 0., 0.]
+    avg_acc = [0., 0., 0.]
+
     for _ in range(n_iter):
         batch_x, batch_y = mnist.train.next_batch(batch_size)
-        for i in range(1):
+
+        for i in range(3):
             model = models[i]
-            # print model
             # print model.name
             writer = train_writers[i]
-            _, cur_summary = sess.run([model.train_op, model.summary_op], {model.X: batch_x, model.y: batch_y, model.training: True})
+            _, cur_summary, cur_loss, cur_acc = sess.run([model.train_op, model.summary_op, model.loss, model.accuracy], 
+                                                         {model.X: batch_x, model.y: batch_y, model.training: True})
+
             writer.add_summary(cur_summary, epoch)
+            # print cur_acc
+            avg_loss[i] += cur_loss
+            avg_acc[i] += cur_acc
+
+    print "[{}/{}] (train)".format(epoch+1, epoch_n),
+    for i in range(3):
+        print "loss: {:.3f}, acc: {:.2%} |".format(avg_loss[i]/float(n_iter), avg_acc[i]/float(n_iter)),
+    print
 
     # test run
-    for i in range(1):
+    print "[{}/{}] (test )".format(epoch+1, epoch_n),
+    for i in range(3):
         model = models[i]
         writer = test_writers[i]
-        cur_summary = sess.run(model.summary_op, {model.X: mnist.test.images, model.y: mnist.test.labels, model.training: False})
+        cur_summary, cur_loss, cur_acc = sess.run([model.summary_op, model.loss, model.accuracy], {model.X: mnist.test.images, model.y: mnist.test.labels, model.training: False})
         writer.add_summary(cur_summary, epoch)
+        print "loss: {:.3f}, acc: {:.2%} |".format(cur_loss, cur_acc),
+    print
+    print
 
-    print epoch
+    # print epoch
 
