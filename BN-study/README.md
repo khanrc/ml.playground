@@ -1,9 +1,4 @@
-# Batch Normalization
+# BatchNorms
 
-BN 을 쓰다 보면 오히려 성능이 안 나올 때가 있음.
-
-이유가 뭔지 분석해보자.
-
-1. 그냥 코드를 잘못짠거 - 특히 loss 계산할 때 reduce_mean 을 안해줘도 작동을 하기 때문에 조심해야 한다.
-
-그리고 이 코드가 지금 에러가 있는데 이유를 못찾겠음... 일단포기...
+* Why SNN claims that BN does not work on FNN?
+* In our toy experiments, why BN does not work on very early stage of training?
