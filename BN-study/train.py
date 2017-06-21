@@ -4,13 +4,15 @@ import os
 from models import Model
 from tensorflow.examples.tutorials.mnist import input_data
 
+os.environ["CUDA_VISIBLE_DEVICES"] = '6' # hmm...
 
 mnist = input_data.read_data_sets('../MNIST_data/', one_hot=True)
 
 batch_size = 100
 epoch_n = 10
 N = mnist.train.num_examples 
-n_iter = N // batch_size
+# n_iter = N // batch_size
+n_iter = 50
 lr = 0.001
 
 # vanilla, NoCD, BN
@@ -26,9 +28,9 @@ sess.run(tf.global_variables_initializer())
 
 # summaries
 summary_dir = "summary/"
-# if os.path.exists(summary_dir):
-#     print('\n[ERROR] Summary directory {} is already exists!\n'.format(summary_dir))
-#     exit(1) 
+if os.path.exists(summary_dir):
+    print('\n[ERROR] Summary directory {} is already exists!\n'.format(summary_dir))
+    exit(1) 
 
 train_writers = [
     tf.summary.FileWriter(summary_dir + 'train/vanilla', sess.graph, flush_secs=5),

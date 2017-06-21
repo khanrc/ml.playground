@@ -23,7 +23,7 @@ class Model(object):
             for i in range(3):
                 with tf.variable_scope("conv{}".format(i)):
                     # conv
-                    net = tf.layers.conv2d(net, n_filters, [3,3], padding='same')
+                    net = tf.layers.conv2d(net, n_filters, [3,3], padding='same', use_bias=not use_BN)
                     if use_BN:
                         net = tf.layers.batch_normalization(net, training=self.training)
                     net = tf.nn.relu(net)
@@ -54,11 +54,19 @@ class Model(object):
             with tf.variable_scope("train_op"):
                 if use_CD:
                     # same as summaries, get_collection must specify scope!
-                    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=name)
+                    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=name+'/')
                     with tf.control_dependencies(update_ops):
                         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
                 else:
                     self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+
+            # add moving averages to histogram
+            histograms = []
+            for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name+'/'):
+			    if "moving_" in var.name:
+			    	histograms.append(tf.summary.histogram(var.name, var))
+			        tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
+			# now, we can get moving averages by tf.get_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, scope=name+'/') 
 
             # summaries
             # Caution: When design multiple models in a single graph,
@@ -66,4 +74,4 @@ class Model(object):
             self.summary_op = tf.summary.merge([
                 tf.summary.scalar("loss", self.loss),
                 tf.summary.scalar("accuracy", self.accuracy)
-            ])
+            ] + histograms)
