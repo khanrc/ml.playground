@@ -63,7 +63,9 @@ ReLU_BN
 * BN 을 쓰지 않으면 훨씬 빨리 acc 가 올라감
 * train loss 는 오히려 BN 을 써야 더 빨리 떨어짐
 
-=> 범인은 `decay` 였다! (`tf.layers` 에서는 `momentum`)
+### Eureka!
+
+범인은 `decay` 였다! (`tf.layers` 에서는 `momentum`)
 
 * `decay` 는 moving average 의 decay 정도를 결정함
     * `ema = decay * ema + (1 - decay) * new_var`
