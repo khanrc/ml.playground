@@ -62,6 +62,16 @@ ReLU_BN
 * iteration 이 300 쯤 되고 나서야 제대로 작동하기 시작하며 500쯤 되야 제 성능이 나옴
 * BN 을 쓰지 않으면 훨씬 빨리 acc 가 올라감
 * train loss 는 오히려 BN 을 써야 더 빨리 떨어짐
-* 가설 1. gamma/beta 가 저정도 되야 (iter=500) 자리를 잡음
-    * 어차피 같이 학습되는건데 딱히 얘만 더 의존적일 이유가 있나...
-    * 체크는 해 보자
+
+=> 범인은 `decay` 였다! (`tf.layers` 에서는 `momentum`)
+
+* `decay` 는 moving average 의 decay 정도를 결정함
+    * `ema = decay * ema + (1 - decay) * new_var`
+* 즉, decay 값이 높으면 기존의 값을 더 잘 보존하고 새로운 값을 잘 받아들이지 않음
+* 따라서, 높은 decay 는 초기에 잡힌 잘못된 moving average 를 오래 보존하게 하고, 따라서 이 moving average 를 사용하는 test set 에 대해서는 초반에 낮은 accuracy 가 나옴.
+* test set 에 대해서는 moving average 를 사용하지 않기 때문에 정확도에 문제가 없음
+* 참고:
+    * `tf.layers.batch_normalization` 의 default momentum 은 0.99 고, `slim.batch_norm` 의 default decay 는 0.999 다.
+    * 그래서 slim 을 쓰면 위와 같은 현상이 더 심하게 나타난다.
+    * decay 를 0.9 로 주면 적은 iteration 에도 괜찮은 test acc 를 볼 수 있다. 
+    * 다만 학습을 충분히 돌린다고 하면 decay 를 높게 주는 것이 맞을 듯.
