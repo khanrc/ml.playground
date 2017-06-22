@@ -63,10 +63,10 @@ class Model(object):
             # add moving averages to histogram
             histograms = []
             for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name+'/'):
-			    if "moving_" in var.name:
-			    	histograms.append(tf.summary.histogram(var.name, var))
-			        tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
-			# now, we can get moving averages by tf.get_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, scope=name+'/') 
+                if "moving_" in var.name:
+                    histograms.append(tf.summary.histogram(var.name, var))
+                    tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
+            # now, we can get moving averages by tf.get_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, scope=name+'/') 
 
             # summaries
             # Caution: When design multiple models in a single graph,
