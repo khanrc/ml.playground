@@ -10,6 +10,18 @@ tf.control\_dependencies 의 효과를 알아본다.
 * tensorboard 의 graph 에서 batch\_norm 의 moving variables 에 train\_op 와의 control dependency edge 가 빠져 있는 것으 확인할 수 있음
 * tensorboard 의 histogram 에서 control dependency 를 연결해주지 않을 경우 moving variables 들이 update 되지 않는 것을 확인할 수 있음
 
+### Debug BNs
+
+* 이를 위해 @wookayin 님의 발표자료를 많이 참조함
+    * https://wook.kr/cv.html#talks 참조
+* Tips
+    * scope: `name + /` 로 쓰자. scope 가 그냥 prefix 찾는 것 같다. // 를 안써주면 다른것들까지 딸려올 수 있음
+    * Why moving_average_variables() empty?
+        * https://github.com/petewarden/tensorflow_makefile/blob/master/tensorflow/g3doc/api_docs/python/functions_and_classes/tf.moving_average_variables.md
+        * `ExponentialMovingAverage` object 가 생성되고 `apply()` 메소드로 variables 에 적용되었을 때 이 variables 들이 `GraphKeys.MOVING_AVERAGE_VARIABLES` 에 등록됨
+        * `tf.layers.batch_normalization()` 에서는 위 플로우를 따르지 않아서 여기에 등록되지 않음
+    * 만약 특정한 variable 을 가져오고 싶다면, `tf.contrib.framework.get_variables()` 를 활용할 수 있음
+
 ## Self-Normalizing Networks
 
 SNN 에 대해서 살펴본다.
