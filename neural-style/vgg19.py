@@ -1,3 +1,4 @@
+#coding: utf-8
 import tensorflow as tf
 import numpy as np
 import scipy.io
@@ -40,6 +41,10 @@ class VGG:
     def unproc(self, image):
         return image + self.mean_pixel
     
+    # 이 vgg network 는 애초에 fc 가 없다.
+    # 즉, image size 에 independent 하다.
+    # 따라서 여기서 placeholder 를 내부적으로 잡아주지 않고 외부에서 잡아서 넣어준다.
+    # 그게 바로 input_image.
     def build_net(self, input_image, pooling='max'):
         net = {}
         current = input_image
