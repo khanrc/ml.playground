@@ -33,8 +33,10 @@ class StyleTransfer(object):
 
     def build_net(self):
         # get features
-        style_image = tf.placeholder(tf.float32, [None] + list(self.style.shape[1:]))
-        content_image = tf.placeholder(tf.float32, [None] + list(self.content.shape[1:]))
+        # style_image = tf.placeholder(tf.float32, [None] + list(self.style.shape[1:]))
+        # content_image = tf.placeholder(tf.float32, [None] + list(self.content.shape[1:]))
+        content_image = tf.constant(self.content, tf.float32)
+        style_image = tf.constant(self.style, tf.float32)
         synthesis_image = tf.Variable(initial_value=self.content, trainable=True, dtype=tf.float32) # init by content image
 
         style_features = self.vgg.build_net(style_image)

@@ -19,7 +19,7 @@ def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--content', help='content image path', required=True)
     parser.add_argument('--style', help='style image path', required=True)
-    parser.add_argument('--output', help='result image path (default: res/`content`_`style`_`max_size`_`content_weight`.jpg)')
+    parser.add_argument('--output', help='result image path (default: res/`content`_`style`_[`max_size`].jpg)')
     parser.add_argument('--max_size', default=512, help='max size of image (default: 512)', type=int)
     parser.add_argument('--content_weight', default=1e-3, help='content weight (default: 1e-3)', type=float)
     parser.add_argument('--style_weight', default=1., help='style weight (default: 1)', type=float)
@@ -30,14 +30,17 @@ def build_parser():
 
     return parser
 
-def output_path(content, style, dir_name='res'):
+def output_path(cfg, dir_name='res'):
     if not os.path.exists(dir_name):
         os.mkdir(dir_name)
     
     get_base = lambda x: os.path.splitext(os.path.basename(x))[0]
-    content = get_base(content)
-    style = get_base(style)
-    fn = "{}_{}.jpg".format(content, style)
+    content = get_base(cfg.content)
+    style = get_base(cfg.style)
+    elems = [cfg.content, cfg.style]
+    if cfg.max_size != 512:
+        elems.append(cfg.max_size)
+    fn = "_".join(map(str, elems))
     return os.path.join(dir_name, fn)
 
 
@@ -46,7 +49,7 @@ if __name__ == "__main__":
     FLAGS = parser.parse_args()
 
     if FLAGS.output is None:
-        FLAGS.output = output_path(FLAGS.content, FLAGS.style)
+        FLAGS.output = output_path(FLAGS)
 
     print("\nParameters:")
     for attr, value in sorted(vars(FLAGS).items()):
@@ -79,8 +82,9 @@ if __name__ == "__main__":
         # scipy 에서 제공하는걸 갖다씀
         optimizer = tf.contrib.opt.ScipyOptimizerInterface(st.total_loss, method='L-BFGS-B', options={'maxiter': FLAGS.n_iter})
 
-        optimizer.minimize(sess, {st.style_image: st.style, st.content_image: st.content}, 
-                           fetches=[st.total_loss, st.content_loss, st.style_loss, st.tv_loss, st.synthesis_image], loss_callback=callback)
+        optimizer.minimize(sess, fetches=[st.total_loss, st.content_loss, st.style_loss, st.tv_loss, st.synthesis_image], loss_callback=callback)
+        # optimizer.minimize(sess, {st.style_image: st.style, st.content_image: st.content}, 
+        #                    fetches=[st.total_loss, st.content_loss, st.style_loss, st.tv_loss, st.synthesis_image], loss_callback=callback)
 
         elapsed = time.time() - st_time
         print("Optimization time: {:.1f}s".format(elapsed))
