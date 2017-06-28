@@ -7,9 +7,6 @@ based on python 2.7, tensorflow 1.2
 * Why origianl loss function does not work?
     * 다른건 다 오리지널 페이퍼 그대로 구현했는데 content_loss 가 이 경우 밸런스가 안 맞음.
     * content_weight 를 조절해서 맞춰줄 수야 있겠지만... 그냥 원본 페이퍼대로 안 되는 이유가 좀 궁금함.
-* Why works differently?
-    * refer code 와 동일한 것 같은데 결과가 살짝 다름.
-    * 이유가 뭘까?
 
 ### Gatcha
 
