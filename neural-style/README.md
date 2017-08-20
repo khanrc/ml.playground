@@ -8,6 +8,12 @@ based on python 2.7, tensorflow 1.2
     * 다른건 다 오리지널 페이퍼 그대로 구현했는데 content_loss 가 이 경우 밸런스가 안 맞음.
     * content_weight 를 조절해서 맞춰줄 수야 있겠지만... 그냥 원본 페이퍼대로 안 되는 이유가 좀 궁금함.
 
+### ToDo
+
+* [ ] download-convenient VGG 로 변경
+    * Ex) TF-slim: https://github.com/nmhkahn/deep_learning_tutorial/tree/master/codes/style_transfer
+    * Keras 가 TF core 로 들어오면 Keras 도 좋을 듯
+
 ### Gatcha
 
 * VGG in the computational graph
