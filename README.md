@@ -1,7 +1,4 @@
-# Playground
+# Machine learning playgrounds
 
-This repo is the playground for various tensorflow models. 
-I will implements various models to understand various papers. 
-If one of these projects grows up, it will separate.
-
-based on python 2.7, tensorflow 1.1.
+This repository is a collection of implementations and experiments, 
+for understanding the paper and testing various idea.
