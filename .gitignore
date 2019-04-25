@@ -5,3 +5,5 @@ out*/
 *.sh
 *.log
 summary/
+*.npy
+*.zip
